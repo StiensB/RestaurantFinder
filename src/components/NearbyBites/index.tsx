@@ -313,26 +313,30 @@ export default function NearbyBites() {
 
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <div className="flex flex-col gap-4 md:gap-8">
-        <div className="text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">NearbyBites</h1>
-          <p className="text-gray-600">Find the best restaurants near you</p>
+      <div className="flex flex-col gap-6 md:gap-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 text-transparent bg-clip-text">
+            NearbyBites
+          </h1>
+          <p className="text-gray-600 text-lg">Discover amazing restaurants in your area</p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white rounded-xl shadow-sm p-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Location or Restaurant</label>
             <Input
               ref={searchInputRef}
               placeholder="Search by name or address..."
               value={searchTerm}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-              className="w-full"
+              className="w-full bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
-          <div className="flex-1">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Cuisine Type</label>
             <Input
-              placeholder="Filter by cuisine (e.g., italian, chinese)"
+              placeholder="e.g., italian, chinese, mexican..."
               value={cuisineFilter}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setCuisineFilter(e.target.value);
@@ -343,20 +347,20 @@ export default function NearbyBites() {
                   }
                 }
               }}
-              className="w-full"
+              className="w-full bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-gray-50 p-4 rounded-lg">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
-            <span className="text-sm whitespace-nowrap">Minimum Rating:</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-white rounded-xl shadow-sm p-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Minimum Rating</label>
             <Select
               value={minRating.toString()}
               onValueChange={(value: string) => setMinRating(Number(value))}
             >
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Select minimum rating" />
+              <SelectTrigger className="w-full bg-gray-50 border-gray-200">
+                <SelectValue placeholder="Select rating" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="0">Any Rating</SelectItem>
@@ -369,10 +373,8 @@ export default function NearbyBites() {
             </Select>
           </div>
 
-          <div className="h-px md:h-6 w-full md:w-px bg-gray-200" />
-
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
-            <span className="text-sm whitespace-nowrap">Search Radius:</span>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Search Radius</label>
             <Select
               value={searchRadius.toString()}
               onValueChange={(value: string) => {
@@ -386,8 +388,8 @@ export default function NearbyBites() {
                 }
               }}
             >
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Select search radius" />
+              <SelectTrigger className="w-full bg-gray-50 border-gray-200">
+                <SelectValue placeholder="Select distance" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="1609">1 mile</SelectItem>
@@ -400,9 +402,7 @@ export default function NearbyBites() {
             </Select>
           </div>
 
-          <div className="h-px md:h-6 w-full md:w-px bg-gray-200" />
-
-          <div className="flex gap-2 w-full md:w-auto">
+          <div className="flex items-end">
             <Button
               variant="outline"
               onClick={() => {
@@ -420,13 +420,14 @@ export default function NearbyBites() {
                   }
                 }
               }}
-              className="flex-1 md:flex-none"
+              className="w-full bg-gray-50 border-gray-200 hover:bg-gray-100"
             >
               Clear Filters
             </Button>
+          </div>
 
+          <div className="flex items-end">
             <Button
-              variant="outline"
               onClick={() => {
                 if (mapInstance) {
                   const center = mapInstance.getCenter();
@@ -436,22 +437,28 @@ export default function NearbyBites() {
                 }
               }}
               disabled={loading}
-              className="flex items-center gap-2 flex-1 md:flex-none"
+              className="w-full bg-gradient-to-r from-blue-600 to-teal-600 text-white hover:from-blue-700 hover:to-teal-700"
             >
-              <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              <RotateCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh Results
             </Button>
           </div>
         </div>
 
+        <div className="relative w-full h-[300px] md:h-[400px] rounded-xl overflow-hidden shadow-lg">
+          <div ref={mapRef} className="w-full h-full" />
+        </div>
+
         {!error && !loading && restaurants.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
-            <h2 className="text-xl font-semibold mb-4">Top 5 Rated Restaurants Near You</h2>
-            <div className="grid gap-4">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="p-4 md:p-6 border-b border-gray-100">
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Top Rated Restaurants</h2>
+            </div>
+            <div className="divide-y divide-gray-100">
               {restaurants.slice(0, 5).map((restaurant) => (
                 <div
                   key={restaurant.place_id}
-                  className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="flex flex-col md:flex-row justify-between p-4 md:p-6 hover:bg-gray-50 transition-colors cursor-pointer"
                   onClick={() => {
                     const marker = markersRef.current.find(
                       m => m.title === restaurant.name
@@ -459,35 +466,34 @@ export default function NearbyBites() {
                     if (marker && mapInstance) {
                       mapInstance.panTo(restaurant.geometry.location);
                       mapInstance.setZoom(15);
-                      
                       google.maps.event.trigger(marker, 'click');
                     }
                   }}
                 >
-                  <div className="w-full md:w-auto mb-2 md:mb-0">
-                    <h3 className="font-bold text-lg">{restaurant.name}</h3>
-                    <p className="text-sm text-gray-600 flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {restaurant.vicinity}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{restaurant.name}</h3>
+                    <p className="text-sm text-gray-600 flex items-center gap-1 mb-2">
+                      <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{restaurant.vicinity}</span>
                     </p>
-                    <div className="mt-1 flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-2">
                       {restaurant.types?.slice(0, 3).map((type) => (
                         <span
                           key={type}
-                          className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded"
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                         >
                           {type.replace(/_/g, " ")}
                         </span>
                       ))}
                     </div>
                   </div>
-                  <div className="flex md:flex-col items-center md:items-end gap-2 md:gap-0 w-full md:w-auto">
+                  <div className="flex items-center gap-4 mt-4 md:mt-0">
                     <div className="flex items-center gap-1">
                       <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                      <span className="font-medium text-lg">{restaurant.rating}</span>
+                      <span className="font-semibold text-lg">{restaurant.rating}</span>
                     </div>
                     <span className="text-sm text-gray-500">
-                      {restaurant.user_ratings_total} reviews
+                      {(restaurant.user_ratings_total ?? 0).toLocaleString()} reviews
                     </span>
                   </div>
                 </div>
@@ -497,16 +503,14 @@ export default function NearbyBites() {
         )}
 
         {error ? (
-          <div className="text-red-500 text-center p-4">{error}</div>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-center">
+            {error}
+          </div>
         ) : loading ? (
-          <div className="flex justify-center p-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="flex justify-center items-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : null}
-
-        <div className="relative w-full h-[300px] md:h-[500px] rounded-lg overflow-hidden shadow-lg">
-          <div ref={mapRef} className="w-full h-full" />
-        </div>
       </div>
     </div>
   );
