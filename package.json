@@ -9,11 +9,14 @@
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.14.3",
+    "@radix-ui/react-select": "^2.1.6",
     "@radix-ui/react-slider": "^1.1.2",
     "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "lucide-react": "^0.293.0",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "tailwind-merge": "^3.1.0"
   },
   "devDependencies": {
     "@types/google.maps": "^3.54.10",

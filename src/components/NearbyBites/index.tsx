@@ -5,6 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@googlemaps/js-api-loader";
 import { MapPin, Star, Search, RotateCw } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 
 interface Restaurant {
@@ -344,43 +351,53 @@ export default function NearbyBites() {
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-gray-50 p-4 rounded-lg">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
             <span className="text-sm whitespace-nowrap">Minimum Rating:</span>
-            <div className="flex items-center gap-2 flex-1">
-              <Slider
-                defaultValue={[minRating]}
-                onValueChange={(value) => setMinRating(value[0])}
-                min={0}
-                max={5}
-                step={0.5}
-                className="flex-1"
-              />
-              <span className="text-sm font-medium whitespace-nowrap">{minRating} ⭐</span>
-            </div>
+            <Select
+              value={minRating.toString()}
+              onValueChange={(value: string) => setMinRating(Number(value))}
+            >
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Select minimum rating" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Any Rating</SelectItem>
+                <SelectItem value="1">⭐ 1+</SelectItem>
+                <SelectItem value="2">⭐⭐ 2+</SelectItem>
+                <SelectItem value="3">⭐⭐⭐ 3+</SelectItem>
+                <SelectItem value="4">⭐⭐⭐⭐ 4+</SelectItem>
+                <SelectItem value="5">⭐⭐⭐⭐⭐ 5</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="h-px md:h-6 w-full md:w-px bg-gray-200" />
 
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
             <span className="text-sm whitespace-nowrap">Search Radius:</span>
-            <div className="flex items-center gap-2 flex-1">
-              <Slider
-                defaultValue={[searchRadius]}
-                onValueChange={(value) => {
-                  const meters = value[0];
-                  setSearchRadius(meters);
-                  if (mapInstance) {
-                    const center = mapInstance.getCenter();
-                    if (center) {
-                      searchNearby(center, mapInstance);
-                    }
+            <Select
+              value={searchRadius.toString()}
+              onValueChange={(value: string) => {
+                const meters = Number(value);
+                setSearchRadius(meters);
+                if (mapInstance) {
+                  const center = mapInstance.getCenter();
+                  if (center) {
+                    searchNearby(center, mapInstance);
                   }
-                }}
-                min={1609}
-                max={40000}
-                step={1609}
-                className="flex-1"
-              />
-              <span className="text-sm font-medium whitespace-nowrap">{Math.round(searchRadius / 1609)} miles</span>
-            </div>
+                }
+              }}
+            >
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Select search radius" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1609">1 mile</SelectItem>
+                <SelectItem value="4827">3 miles</SelectItem>
+                <SelectItem value="8045">5 miles</SelectItem>
+                <SelectItem value="16090">10 miles</SelectItem>
+                <SelectItem value="24140">15 miles</SelectItem>
+                <SelectItem value="40000">25 miles</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="h-px md:h-6 w-full md:w-px bg-gray-200" />
