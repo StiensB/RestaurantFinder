@@ -305,14 +305,14 @@ export default function NearbyBites() {
   });
 
   return (
-    <div className="container mx-auto p-8">
-      <div className="flex flex-col gap-8">
+    <div className="container mx-auto p-4 md:p-8">
+      <div className="flex flex-col gap-4 md:gap-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-2">NearbyBites</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">NearbyBites</h1>
           <p className="text-gray-600">Find the best restaurants near you</p>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <Input
               ref={searchInputRef}
@@ -322,13 +322,13 @@ export default function NearbyBites() {
               className="w-full"
             />
           </div>
+
           <div className="flex-1">
             <Input
               placeholder="Filter by cuisine (e.g., italian, chinese)"
               value={cuisineFilter}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setCuisineFilter(e.target.value);
-                // Trigger a new search when cuisine filter changes
                 if (mapInstance) {
                   const center = mapInstance.getCenter();
                   if (center) {
@@ -340,97 +340,101 @@ export default function NearbyBites() {
             />
           </div>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <span className="text-sm">Minimum Rating:</span>
-          <Slider
-            defaultValue={[minRating]}
-            onValueChange={(value) => setMinRating(value[0])}
-            min={0}
-            max={5}
-            step={0.5}
-            className="w-48"
-          />
-          <span className="text-sm font-medium">{minRating} ⭐</span>
 
-          <div className="h-6 w-px bg-gray-200 mx-2" />
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 bg-gray-50 p-4 rounded-lg">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
+            <span className="text-sm whitespace-nowrap">Minimum Rating:</span>
+            <div className="flex items-center gap-2 flex-1">
+              <Slider
+                defaultValue={[minRating]}
+                onValueChange={(value) => setMinRating(value[0])}
+                min={0}
+                max={5}
+                step={0.5}
+                className="flex-1"
+              />
+              <span className="text-sm font-medium whitespace-nowrap">{minRating} ⭐</span>
+            </div>
+          </div>
 
-          <span className="text-sm">Search Radius:</span>
-          <Slider
-            defaultValue={[searchRadius]}
-            onValueChange={(value) => {
-              const meters = value[0];
-              setSearchRadius(meters);
-              // Trigger a new search with the updated radius
-              if (mapInstance) {
-                const center = mapInstance.getCenter();
-                if (center) {
-                  searchNearby(center, mapInstance);
+          <div className="h-px md:h-6 w-full md:w-px bg-gray-200" />
+
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1">
+            <span className="text-sm whitespace-nowrap">Search Radius:</span>
+            <div className="flex items-center gap-2 flex-1">
+              <Slider
+                defaultValue={[searchRadius]}
+                onValueChange={(value) => {
+                  const meters = value[0];
+                  setSearchRadius(meters);
+                  if (mapInstance) {
+                    const center = mapInstance.getCenter();
+                    if (center) {
+                      searchNearby(center, mapInstance);
+                    }
+                  }
+                }}
+                min={1609}
+                max={40000}
+                step={1609}
+                className="flex-1"
+              />
+              <span className="text-sm font-medium whitespace-nowrap">{Math.round(searchRadius / 1609)} miles</span>
+            </div>
+          </div>
+
+          <div className="h-px md:h-6 w-full md:w-px bg-gray-200" />
+
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchTerm("");
+                setCuisineFilter("");
+                setMinRating(0);
+                setSearchRadius(24140);
+                if (searchInputRef.current) {
+                  searchInputRef.current.value = "";
                 }
-              }
-            }}
-            min={1609} // 1 mile in meters
-            max={40000} // ~25 miles in meters
-            step={1609} // 1 mile increments
-            className="w-48"
-          />
-          <span className="text-sm font-medium">{Math.round(searchRadius / 1609)} miles</span>
-
-          <div className="h-6 w-px bg-gray-200 mx-2" />
-
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSearchTerm("");
-              setCuisineFilter("");
-              setMinRating(0);
-              setSearchRadius(24140); // Reset to 15 miles
-              if (searchInputRef.current) {
-                searchInputRef.current.value = "";
-              }
-              if (mapInstance) {
-                const center = mapInstance.getCenter();
-                if (center) {
-                  searchNearby(center, mapInstance);
+                if (mapInstance) {
+                  const center = mapInstance.getCenter();
+                  if (center) {
+                    searchNearby(center, mapInstance);
+                  }
                 }
-              }
-            }}
-          >
-            Clear Filters
-          </Button>
+              }}
+              className="flex-1 md:flex-none"
+            >
+              Clear Filters
+            </Button>
 
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (mapInstance) {
-                const center = mapInstance.getCenter();
-                if (center) {
-                  searchNearby(center, mapInstance);
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (mapInstance) {
+                  const center = mapInstance.getCenter();
+                  if (center) {
+                    searchNearby(center, mapInstance);
+                  }
                 }
-              }
-            }}
-            disabled={loading}
-            className="flex items-center gap-2"
-          >
-            <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-8">
-        <div className="w-full h-[400px] rounded-lg overflow-hidden shadow-lg">
-          <div ref={mapRef} className="w-full h-full" />
+              }}
+              disabled={loading}
+              className="flex items-center gap-2 flex-1 md:flex-none"
+            >
+              <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {!error && !loading && restaurants.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
             <h2 className="text-xl font-semibold mb-4">Top 5 Rated Restaurants Near You</h2>
             <div className="grid gap-4">
               {restaurants.slice(0, 5).map((restaurant) => (
                 <div
                   key={restaurant.place_id}
-                  className="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                   onClick={() => {
                     const marker = markersRef.current.find(
                       m => m.title === restaurant.name
@@ -439,13 +443,11 @@ export default function NearbyBites() {
                       mapInstance.panTo(restaurant.geometry.location);
                       mapInstance.setZoom(15);
                       
-                      // Trigger the marker click
                       google.maps.event.trigger(marker, 'click');
                     }
                   }}
-                  style={{ cursor: 'pointer' }}
                 >
-                  <div>
+                  <div className="w-full md:w-auto mb-2 md:mb-0">
                     <h3 className="font-bold text-lg">{restaurant.name}</h3>
                     <p className="text-sm text-gray-600 flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
@@ -462,8 +464,8 @@ export default function NearbyBites() {
                       ))}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-1 justify-end">
+                  <div className="flex md:flex-col items-center md:items-end gap-2 md:gap-0 w-full md:w-auto">
+                    <div className="flex items-center gap-1">
                       <Star className="w-5 h-5 text-yellow-400 fill-current" />
                       <span className="font-medium text-lg">{restaurant.rating}</span>
                     </div>
@@ -476,47 +478,18 @@ export default function NearbyBites() {
             </div>
           </div>
         )}
-        
+
         {error ? (
           <div className="text-red-500 text-center p-4">{error}</div>
         ) : loading ? (
-          <div className="text-center p-4">Loading restaurants...</div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredRestaurants.map((restaurant) => (
-              <Card key={restaurant.place_id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-lg mb-2">{restaurant.name}</h3>
-                      <p className="text-sm text-gray-600 flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        {restaurant.vicinity}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      <span className="font-medium">{restaurant.rating}</span>
-                      <span className="text-sm text-gray-500">
-                        ({restaurant.user_ratings_total})
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    {restaurant.types?.map((type) => (
-                      <span
-                        key={type}
-                        className="inline-block bg-gray-100 rounded-full px-3 py-1 text-sm mr-2 mb-2"
-                      >
-                        {type.replace(/_/g, " ")}
-                      </span>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="flex justify-center p-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
-        )}
+        ) : null}
+
+        <div className="relative w-full h-[300px] md:h-[500px] rounded-lg overflow-hidden shadow-lg">
+          <div ref={mapRef} className="w-full h-full" />
+        </div>
       </div>
     </div>
   );
