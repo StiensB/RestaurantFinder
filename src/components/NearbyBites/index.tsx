@@ -18,7 +18,7 @@ interface Restaurant {
   geometry: { location: google.maps.LatLng };
 }
 
-export default function RestaurantFinder() {
+export default function NearbyBites() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -308,7 +308,7 @@ export default function RestaurantFinder() {
     <div className="container mx-auto p-8">
       <div className="flex flex-col gap-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-2">Restaurant Finder</h1>
+          <h1 className="text-4xl font-bold mb-2">NearbyBites</h1>
           <p className="text-gray-600">Find the best restaurants near you</p>
         </div>
 

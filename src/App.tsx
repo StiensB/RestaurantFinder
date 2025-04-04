@@ -1,10 +1,10 @@
 import React from 'react';
-import RestaurantFinder from './components/RestaurantFinder';
+import NearbyBites from './components/NearbyBites';
 
 export default function App() {
   return (
     <div className="min-h-screen bg-background">
-      <RestaurantFinder />
+      <NearbyBites />
     </div>
   );
 }

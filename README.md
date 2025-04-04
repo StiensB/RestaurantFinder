@@ -1,6 +1,6 @@
-# Restaurant Finder
+# NearbyBites
 
-A web application to find and filter restaurants using Google Maps and Places API.
+A web application to discover and explore restaurants in your area using Google Maps and Places API.
 
 ## Environment Setup
 
@@ -21,6 +21,16 @@ VITE_GOOGLE_MAPS_API_KEY=your_api_key_here
   - Limit to your deployment domain
   - Enable only required APIs (Maps JavaScript API, Places API)
 
+## Features
+
+- Interactive map with restaurant markers
+- Top 5 rated restaurants display
+- Search by name or address with autocomplete
+- Filter by cuisine type
+- Adjust search radius
+- Minimum rating filter
+- Real-time updates as you move the map
+
 ## Deployment
 
 ### Vercel
@@ -33,6 +43,11 @@ vercel deploy
 1. Go to Site settings > Build & deploy > Environment variables
 2. Add `VITE_GOOGLE_MAPS_API_KEY`
 3. Deploy as usual
+
+### GitHub Pages
+1. Set up repository secrets
+2. Enable GitHub Pages
+3. Push to main branch for automatic deployment
 
 ### Other Platforms
 Ensure you:
