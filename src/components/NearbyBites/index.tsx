@@ -12,9 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 
-interface Restaurant {
+type Restaurant = {
   place_id: string;
   name: string;
   rating?: number;
@@ -22,8 +21,10 @@ interface Restaurant {
   vicinity?: string;
   types?: string[];
   photos?: google.maps.places.PlacePhoto[];
-  geometry: { location: google.maps.LatLng };
-}
+  geometry: {
+    location: google.maps.LatLng;
+  };
+};
 
 export default function NearbyBites() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -40,6 +41,7 @@ export default function NearbyBites() {
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const searchTimeoutRef = useRef<number | null>(null);
+  const isUpdatingRef = useRef(false);
 
   const updateMarkers = (restaurants: Restaurant[], map: google.maps.Map) => {
     // Clear existing markers
@@ -92,7 +94,15 @@ export default function NearbyBites() {
   };
 
   const searchNearby = useCallback((location: google.maps.LatLng, map: google.maps.Map) => {
+    if (isUpdatingRef.current) {
+      return; // Skip if we're already updating
+    }
+
+    isUpdatingRef.current = true;
     const service = new google.maps.places.PlacesService(map);
+    
+    console.log("Searching with radius:", searchRadius); // Debug log
+    
     const request: google.maps.places.PlaceSearchRequest = {
       location,
       radius: searchRadius,
@@ -102,6 +112,8 @@ export default function NearbyBites() {
     };
 
     setLoading(true);
+    setError(null);
+
     service.nearbySearch(request, (results, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK && results) {
         const sorted = results
@@ -121,15 +133,34 @@ export default function NearbyBites() {
 
         setRestaurants(mappedResults);
         updateMarkers(mappedResults, map);
+
+        // Only update bounds if we have results
+        if (mappedResults.length > 0) {
+          const bounds = new google.maps.LatLngBounds();
+          bounds.extend(location); // Include search center
+          mappedResults.forEach(restaurant => {
+            bounds.extend(restaurant.geometry.location);
+          });
+          map.fitBounds(bounds, 50);
+        }
+      } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+        setError("No restaurants found in this area. Try adjusting your filters or search radius.");
+        setRestaurants([]);
+        updateMarkers([], map);
       } else {
         console.error("Places API error:", status);
-        setError("No restaurants found or error fetching data.");
+        setError("Error fetching restaurants. Please try again.");
         setRestaurants([]);
         updateMarkers([], map);
       }
       setLoading(false);
+      
+      // Reset the updating flag after a short delay
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+      }, 1000);
     });
-  }, [searchTerm, searchRadius, cuisineFilter]);
+  }, [searchTerm, searchRadius, cuisineFilter, updateMarkers]);
 
   // Initialize map center change listener
   useEffect(() => {
@@ -140,13 +171,16 @@ export default function NearbyBites() {
           window.clearTimeout(searchTimeoutRef.current);
         }
 
-        // Set a new timeout to search after the map stops moving
-        searchTimeoutRef.current = window.setTimeout(() => {
-          const center = mapInstance.getCenter();
-          if (center) {
-            searchNearby(center, mapInstance);
-          }
-        }, 1000); // Wait 1 second after map stops moving before searching
+        // Only search if we're not currently updating
+        if (!isUpdatingRef.current) {
+          // Set a new timeout to search after the map stops moving
+          searchTimeoutRef.current = window.setTimeout(() => {
+            const center = mapInstance.getCenter();
+            if (center) {
+              searchNearby(center, mapInstance);
+            }
+          }, 1000); // Wait 1 second after map stops moving before searching
+        }
       });
 
       return () => {
@@ -274,6 +308,15 @@ export default function NearbyBites() {
 
                     setRestaurants(mappedResults);
                     updateMarkers(mappedResults, map);
+
+                    // Create bounds that include all restaurants and the center
+                    const bounds = new google.maps.LatLngBounds(location);
+                    mappedResults.forEach(restaurant => {
+                      bounds.extend(restaurant.geometry.location);
+                    });
+
+                    // Add a bit of padding to the bounds
+                    map.fitBounds(bounds, 50);
                   } else {
                     console.error("Places API error:", status);
                     setError("No restaurants found or error fetching data.");
@@ -304,24 +347,21 @@ export default function NearbyBites() {
 
   const filteredRestaurants = restaurants.filter(r => {
     const matchesSearch = r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         r.vicinity?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCuisine = !cuisineFilter || 
-                          r.types?.some(type => type.includes(cuisineFilter.toLowerCase()));
-    const matchesRating = r.rating ? r.rating >= minRating : false;
+      (r.vicinity && r.vicinity.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCuisine = !cuisineFilter || (r.types && r.types.some(t => t.toLowerCase().includes(cuisineFilter.toLowerCase())));
+    const matchesRating = r.rating !== undefined && r.rating >= minRating;
     return matchesSearch && matchesCuisine && matchesRating;
   });
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <div className="flex flex-col gap-6 md:gap-8">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 text-transparent bg-clip-text">
-            NearbyBites
-          </h1>
-          <p className="text-gray-600 text-lg">Discover amazing restaurants in your area</p>
+    <div className="min-h-screen bg-gray-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">NearbyBites</h1>
+          <p className="text-lg text-gray-600">Find the best restaurants near you</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white rounded-xl shadow-sm p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Location or Restaurant</label>
             <Input
@@ -363,12 +403,10 @@ export default function NearbyBites() {
                 <SelectValue placeholder="Select rating" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="0">Any Rating</SelectItem>
-                <SelectItem value="1">⭐ 1+</SelectItem>
-                <SelectItem value="2">⭐⭐ 2+</SelectItem>
-                <SelectItem value="3">⭐⭐⭐ 3+</SelectItem>
-                <SelectItem value="4">⭐⭐⭐⭐ 4+</SelectItem>
-                <SelectItem value="5">⭐⭐⭐⭐⭐ 5</SelectItem>
+                <SelectItem value="0">Any rating</SelectItem>
+                <SelectItem value="3">3+ stars</SelectItem>
+                <SelectItem value="4">4+ stars</SelectItem>
+                <SelectItem value="4.5">4.5+ stars</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -383,6 +421,26 @@ export default function NearbyBites() {
                 if (mapInstance) {
                   const center = mapInstance.getCenter();
                   if (center) {
+                    // Create a circle to visualize the radius
+                    const circle = new google.maps.Circle({
+                      strokeColor: "#4285F4",
+                      strokeOpacity: 0.8,
+                      strokeWeight: 2,
+                      fillColor: "#4285F4",
+                      fillOpacity: 0.1,
+                      map: mapInstance,
+                      center: center,
+                      radius: meters
+                    });
+
+                    // Fit the map to the circle bounds
+                    mapInstance.fitBounds(circle.getBounds()!);
+
+                    // Remove the circle after a short delay
+                    setTimeout(() => {
+                      circle.setMap(null);
+                    }, 2000);
+
                     searchNearby(center, mapInstance);
                   }
                 }
@@ -404,12 +462,27 @@ export default function NearbyBites() {
 
           <div className="flex items-end">
             <Button
-              variant="outline"
+              onClick={() => {
+                if (mapInstance) {
+                  const center = mapInstance.getCenter();
+                  if (center) {
+                    searchNearby(center, mapInstance);
+                  }
+                }
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Search
+            </Button>
+          </div>
+
+          <div className="flex items-end">
+            <Button
               onClick={() => {
                 setSearchTerm("");
                 setCuisineFilter("");
                 setMinRating(0);
-                setSearchRadius(24140);
                 if (searchInputRef.current) {
                   searchInputRef.current.value = "";
                 }
@@ -420,97 +493,88 @@ export default function NearbyBites() {
                   }
                 }
               }}
-              className="w-full bg-gray-50 border-gray-200 hover:bg-gray-100"
+              variant="outline"
+              className="w-full border-gray-200 hover:bg-gray-50"
             >
-              Clear Filters
-            </Button>
-          </div>
-
-          <div className="flex items-end">
-            <Button
-              onClick={() => {
-                if (mapInstance) {
-                  const center = mapInstance.getCenter();
-                  if (center) {
-                    searchNearby(center, mapInstance);
-                  }
-                }
-              }}
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-teal-600 text-white hover:from-blue-700 hover:to-teal-700"
-            >
-              <RotateCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh Results
+              <RotateCw className="w-4 h-4 mr-2" />
+              Reset Filters
             </Button>
           </div>
         </div>
 
-        <div className="relative w-full h-[300px] md:h-[400px] rounded-xl overflow-hidden shadow-lg">
-          <div ref={mapRef} className="w-full h-full" />
-        </div>
+        <div className="mt-8">
+          <div ref={mapRef} className="w-full h-[400px] rounded-xl shadow-lg mb-8" />
 
-        {!error && !loading && restaurants.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="p-4 md:p-6 border-b border-gray-100">
-              <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Top Rated Restaurants</h2>
+          {loading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
-            <div className="divide-y divide-gray-100">
-              {restaurants.slice(0, 5).map((restaurant) => (
-                <div
-                  key={restaurant.place_id}
-                  className="flex flex-col md:flex-row justify-between p-4 md:p-6 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    const marker = markersRef.current.find(
-                      m => m.title === restaurant.name
-                    );
-                    if (marker && mapInstance) {
-                      mapInstance.panTo(restaurant.geometry.location);
-                      mapInstance.setZoom(15);
-                      google.maps.event.trigger(marker, 'click');
-                    }
-                  }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{restaurant.name}</h3>
-                    <p className="text-sm text-gray-600 flex items-center gap-1 mb-2">
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{restaurant.vicinity}</span>
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {restaurant.types?.slice(0, 3).map((type) => (
-                        <span
-                          key={type}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                        >
-                          {type.replace(/_/g, " ")}
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-8">
+              {error}
+            </div>
+          )}
+
+          {!error && !loading && restaurants.length > 0 && (
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="p-4 md:p-6 border-b border-gray-100">
+                <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Top Rated Restaurants</h2>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {restaurants.slice(0, 15).map((restaurant) => (
+                  <div
+                    key={restaurant.place_id}
+                    className="flex flex-col md:flex-row justify-between p-4 md:p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => {
+                      const marker = markersRef.current.find(
+                        m => m.title === restaurant.name
+                      );
+                      if (marker && mapInstance) {
+                        mapInstance.panTo(restaurant.geometry.location);
+                        mapInstance.setZoom(15);
+                        google.maps.event.trigger(marker, 'click');
+                      }
+                    }}
+                  >
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        {restaurant.name}
+                      </h3>
+                      <p className="text-gray-600 mb-2">{restaurant.vicinity}</p>
+                      <div className="flex items-center gap-2">
+                        {restaurant.types?.slice(0, 3).map((type, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                          >
+                            {type.replace(/_/g, " ")}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center mt-4 md:mt-0 md:ml-6">
+                      <div className="flex items-center">
+                        <Star className="w-5 h-5 text-yellow-400 mr-1" />
+                        <span className="font-semibold">{restaurant.rating}</span>
+                        <span className="text-gray-500 ml-1">
+                          ({restaurant.user_ratings_total} reviews)
                         </span>
-                      ))}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 mt-4 md:mt-0">
-                    <div className="flex items-center gap-1">
-                      <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                      <span className="font-semibold text-lg">{restaurant.rating}</span>
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      {(restaurant.user_ratings_total ?? 0).toLocaleString()} reviews
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {error ? (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-center">
-            {error}
-          </div>
-        ) : loading ? (
-          <div className="flex justify-center items-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : null}
+          {!error && !loading && restaurants.length === 0 && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
+              <p className="text-gray-600">No restaurants found matching your criteria.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
