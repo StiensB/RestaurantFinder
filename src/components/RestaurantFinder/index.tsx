@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@googlemaps/js-api-loader";
-import { MapPin, Star, Search } from "lucide-react";
+import { MapPin, Star, Search, RotateCw } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
 interface Restaurant {
@@ -397,6 +397,23 @@ export default function RestaurantFinder() {
             }}
           >
             Clear Filters
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (mapInstance) {
+                const center = mapInstance.getCenter();
+                if (center) {
+                  searchNearby(center, mapInstance);
+                }
+              }
+            }}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
         </div>
       </div>
